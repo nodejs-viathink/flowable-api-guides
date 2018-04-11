@@ -19,16 +19,19 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 
+/**
+ * 委派
+ */
 public class Part2 {
     private ProcessEngine processEngine = null;
     // 初始化流程引擎
     @Before
     public void createDeployment() {
         ProcessEngineConfiguration cfg = new StandaloneProcessEngineConfiguration();
-        cfg.setJdbcDriver("com.mysql.jdbc.Driver");
-        cfg.setJdbcUrl("jdbc:mysql://localhost:3306/flowable621?useUnicode=true&characterEncoding=utf8&useSSL=true");
+        cfg.setJdbcDriver("com.mysql.cj.jdbc.Driver");
+        cfg.setJdbcUrl("jdbc:mysql://localhost:3306/flowable621?useUnicode=true&characterEncoding=utf8&useSSL=false");
         cfg.setJdbcUsername("root");
-        cfg.setJdbcPassword("root");
+        cfg.setJdbcPassword("rootroot");
         cfg.setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_TRUE);
         processEngine = cfg.buildProcessEngine();
     }

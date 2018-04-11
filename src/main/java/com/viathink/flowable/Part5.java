@@ -5,7 +5,6 @@ import org.flowable.engine.impl.cfg.StandaloneProcessEngineConfiguration;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.engine.repository.ProcessDefinitionQuery;
 import org.flowable.engine.runtime.ProcessInstance;
-import org.flowable.idm.api.Group;
 import org.flowable.idm.api.User;
 import org.flowable.task.api.Task;
 import org.junit.Before;
@@ -18,7 +17,7 @@ import java.util.Map;
 
 import static junit.framework.TestCase.assertNotNull;
 
-public class Part1 {
+public class Part5 {
 
     private ProcessEngine processEngine = null;
     // 初始化流程引擎
@@ -32,60 +31,65 @@ public class Part1 {
         cfg.setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_TRUE);
         processEngine = cfg.buildProcessEngine();
     }
-    // 添加用户和组
+    // 添加测试用户
     @Test
     public void addGroupAndUser() {
         IdentityService identityService = processEngine.getIdentityService();
-        //创建组
-        Group developGroup = identityService.newGroup("develop");
-        developGroup.setName("开发部");
-        developGroup.setType("assignee");
-        identityService.saveGroup(developGroup);
-        Group managerGroup = identityService.newGroup("manager");
-        managerGroup.setName("管理部");
-        managerGroup.setType("assignee");
-        identityService.saveGroup(managerGroup);
         //创建用户
-        User user1 = identityService.newUser("lijianxun");
-        user1.setFirstName("李建勋");
+        User user1 = identityService.newUser("user1");
+        user1.setFirstName("user1");
         user1.setLastName("");
-        user1.setEmail("lijianxun@viathink.com");
+        user1.setEmail("user1@viathink.com");
         identityService.saveUser(user1);
         // 用户加入组
-        identityService.createMembership("lijianxun", "develop");
+        identityService.createMembership("user1", "develop");
         // 创建用户
-        User user2 = identityService.newUser("guoshuang");
-        user2.setFirstName("郭爽");
+        User user2 = identityService.newUser("user2");
+        user2.setFirstName("user2");
         user2.setLastName("");
-        user2.setEmail("guoshuang@viathink.com");
+        user2.setEmail("user2@viathink.com");
         identityService.saveUser(user2);
         // 用户加入组
-        identityService.createMembership("guoshuang", "develop");
+        identityService.createMembership("user2", "develop");
         // 创建用户
-        User user3 = identityService.newUser("kangbeibei");
-        user3.setFirstName("康蓓蓓");
+        User user3 = identityService.newUser("user3");
+        user3.setFirstName("user3");
         user3.setLastName("");
-        user3.setEmail("kangbeibei@viathink.com");
+        user3.setEmail("user3@viathink.com");
         identityService.saveUser(user3);
         // 用户加入组
-        identityService.createMembership("kangbeibei", "manager");
+        identityService.createMembership("user3", "develop");
+        User user4 = identityService.newUser("user4");
+        user4.setFirstName("user4");
+        user4.setLastName("");
+        user4.setEmail("user4@viathink.com");
+        identityService.saveUser(user4);
+        // 用户加入组
+        identityService.createMembership("user4", "develop");
+        User user5 = identityService.newUser("user5");
+        user5.setFirstName("user5");
+        user5.setLastName("");
+        user5.setEmail("user5@viathink.com");
+        identityService.saveUser(user5);
+        // 用户加入组
+        identityService.createMembership("user5", "develop");
     }
     // 部署流程
     @Test
     public void deployProcess() throws Exception {
         RepositoryService repositoryService = processEngine.getRepositoryService();
-        String filePath = "bpmn/develop.bpmn";
+        String filePath = "bpmn/gateway.bpmn";
         // 获取输入流
         FileInputStream in = new FileInputStream(filePath);
         // 部署
         repositoryService
                 .createDeployment()
-                .name("流程定义1")
-                .addInputStream("develop.bpmn", in)
+                .name("Gateway")
+                .addInputStream("gateway.bpmn", in)
                 .deploy();
         // 验证部署是否部署成功
         ProcessDefinitionQuery pdq = repositoryService.createProcessDefinitionQuery();
-        List<ProcessDefinition> pdList = pdq.processDefinitionKey("myProcess").list();
+        List<ProcessDefinition> pdList = pdq.processDefinitionKey("gateway").list();
         assertNotNull(pdList);
         for (ProcessDefinition pd: pdList) {
             System.out.println("id: " + pd.getId());
@@ -98,7 +102,7 @@ public class Part1 {
     public void startProcess() {
         // 定义一个流程单据id，流程单据name 模拟系统内单据id和name，也可存多个如存快照等
         String sheetId = "12345";
-        String sheetName = "预算编制";
+        String sheetName = "网关测试";
         RuntimeService runtimeService = processEngine.getRuntimeService();
         // 如果多个key相同的流程定义，会启动version最高的流程
         // 操作数据库的act_ru_execution表,如果是用户任务节点，同时也会在act_ru_task添加一条记录
@@ -106,18 +110,12 @@ public class Part1 {
         Map<String, Object> variableMap = new HashMap<String, Object>();
         variableMap.put("sheetId", sheetId);
         variableMap.put("sheetName", sheetName);
-        ProcessInstance pi = runtimeService.startProcessInstanceByKey("myProcess", variableMap);
+        ProcessInstance pi = runtimeService.startProcessInstanceByKey("gateway", variableMap);
         assertNotNull(pi);
         System.out.println("pid: " + pi.getId() + ",activitiId: " + pi.getActivityId() + ",pdId: " + pi.getProcessDefinitionId());
     }
     @Test
     public void setVariables() {
-        // 设置流程变量可以有2种方式，流程变量作用域也有区别
-        // 1. 通过RuntimeService
-        String executionId = "5004";
-        RuntimeService runtimeService = processEngine.getRuntimeService();
-        // 设置的是全局的流程变量，流程开始到结束都可以获取，相同的key，后面的会覆盖前面的，版本 + 1，被覆盖的也会进入历史表
-        runtimeService.setVariable(executionId, "variable1", "variable1");
         // 2. 通过TaskService
         String taskId = "5007";
         TaskService taskService = processEngine.getTaskService();
@@ -127,7 +125,7 @@ public class Part1 {
     // 获取某个用户的待审批任务
     @Test
     public void queryPersonalTask() {
-        String assignee = "lijianxun";
+        String assignee = "user5";
         TaskService taskService = processEngine.getTaskService();
         List<Task> taskList = taskService
                 .createTaskQuery()
@@ -144,56 +142,19 @@ public class Part1 {
     // 办理任务
     @Test
     public void completeTask() {
-        String taskId = "5007";
+        String taskId = "75008";
         TaskService taskService = processEngine.getTaskService();
         // 对于执行完的任务，activiti将从act_ru_task表中删除该任务，下一个任务会被插入进来
         taskService.complete(taskId);
-        // 执行完后任务将被派发给下一审批人员或组
     }
-    // 查询组任务，组内的人都能查询到，谁签收，谁处理
+    // 办理并且设置流程变量
     @Test
-    public void queryGroupTask() {
-        String assignee = "lijianxun";
-        TaskService taskService = processEngine.getTaskService();
-        List<Task> taskList = taskService
-                .createTaskQuery()
-                .taskCandidateUser(assignee)
-                .orderByTaskCreateTime().desc()
-                .list();
-        for(Task task: taskList) {
-            System.out.println("id: " + task.getId());
-            System.out.println("name: " + task.getName());
-            System.out.println("crateTime: " + task.getCreateTime());
-            System.out.println("assignee: " + task.getAssignee());
-            System.out.println("category: " + task.getCategory());
-        }
-    }
-    // 签收组任务
-    @Test
-    public void claimTask() {
-        String assignee = "guoshuang";
-        String taskId = "7502";
-        TaskService taskService = processEngine.getTaskService();
-        taskService.claim(taskId, assignee);
-        // 然后按指定人去查询是否已经签收任务成功，签收成功后组内其他人无法查询到组任务
-        List<Task> taskList = taskService
-                .createTaskQuery()
-                .taskAssignee(assignee)
-                .orderByTaskCreateTime().desc()
-                .list();
-        for(Task task: taskList) {
-            System.out.println("id: " + task.getId());
-            System.out.println("name: " + task.getName());
-            System.out.println("crateTime: " + task.getCreateTime());
-            System.out.println("assignee: " + task.getAssignee());
-        }
-    }
-    // 办理组任务，本测试完成组任务后就结束了
-    @Test
-    public void completeGroupTask() {
-        String taskId = "7502";
+    public void completeTaskAndSetVariables() {
+        String taskId = "70007";
         TaskService taskService = processEngine.getTaskService();
         // 对于执行完的任务，activiti将从act_ru_task表中删除该任务，下一个任务会被插入进来
-        taskService.complete(taskId);
+        Map<String, Object> variableMap = new HashMap<String, Object>();
+        variableMap.put("agree", false);
+        taskService.complete(taskId, variableMap);
     }
 }
